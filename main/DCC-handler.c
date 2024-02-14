@@ -34,7 +34,7 @@ enum {
     MOB_OK,
     MOB_WAKE,
     MOB_RESET,
-};
+} MOB_STATE;
 
 #define ESPNOW_MAXDELAY 512
 
@@ -139,8 +139,19 @@ int espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, uint16_t
     // Convert that four bytes to float
     float latitude = 0;
     float longitude = 0;
+    // If either longitude/latitude or both filled with 0xF bytes, set longitude and latitude to 0
+    if (buf->payload[1] == 0xFF && buf->payload[2] == 0xFF && buf->payload[3] == 0xFF && buf->payload[4] == 0xFF) {
+        latitude = 0;
+    }
+    if (buf->payload[5] == 0xFF && buf->payload[6] == 0xFF && buf->payload[7] == 0xFF && buf->payload[8] == 0xFF) {
+        longitude = 0;
+    }
+
     memcpy(&latitude, &buf->payload[1], 4);
     memcpy(&longitude, &buf->payload[5], 4);
+    
+
+
     // printf("Latitude: %f, Longitude: %f\n", latitude, longitude);
     // "MOB: OK, 12345.12345, 12345.12345, 12345.12345"
     // If first byte is 0, it is MOB_OK, if first byte is 1, it is MOB_WAKE, if first byte is 2, it is MOB_RESET, else it is invalid
